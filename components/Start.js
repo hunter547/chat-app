@@ -47,6 +47,8 @@ export default class Start extends React.Component {
               <TextInput style={styles.nameInput}
                 accessible={true}
                 accessibilityLabel='Input handle...'
+                accessibilityHint='This handle will be used to identify you by other members'
+                accessibilityRole= 'text'
                 onChangeText={(name) => this.setState({ name })}
                 value={this.state.name}
                 placeholder='Input handle...                                      '
@@ -61,6 +63,10 @@ export default class Start extends React.Component {
                 colorSelected === color ? { borderColor: '#757083' } : null]}
                   key={color}>
                   <TouchableOpacity
+                    accessible={true}
+                    accessibilityLabel='Select your background color'
+                    accessibilityHint='The color selected will be your header and chat message color'
+                    accessibilityRole='button'
                     onPress={() => this.setState({ colorSelected: color })}
                     style={[styles.colorButton,
                     { backgroundColor: color }]}
@@ -69,7 +75,11 @@ export default class Start extends React.Component {
               ))}
             </View>
             <TouchableOpacity onPress={() => navigation.navigate('Chat', { name, color: colorSelected })}
-              style={[styles.chatButton]}>
+              style={[styles.chatButton]}
+              accessible={true}
+              accessibilityLabel='Start chatting'
+              accessibilityHint='Clicking the button will enter the chat screen where you can connect with other users.'
+              accessibilityRole='button'>
               <Text style={styles.chatButtonText}>
                 Start Chatting
               </Text>
