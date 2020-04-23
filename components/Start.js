@@ -1,7 +1,11 @@
 import React, { Component } from 'react';
 import { StyleSheet, View, Text, TextInput, ImageBackground, TouchableOpacity } from 'react-native';
 import Icon from '../assets/personIcon';
+import KeyboardSpacer from 'react-native-keyboard-spacer';
 import * as Font from 'expo-font';
+const firebase = require('firebase');
+require('firebase/firestore');
+import firebaseConfig from './configs/firebaseConfig';
 
 
 
@@ -9,6 +13,7 @@ export default class Start extends React.Component {
 
   constructor(props) {
     super(props);
+    firebase.initializeApp(firebaseConfig);
     this.state = {
       name: '',
       colorSelected: '',
@@ -18,11 +23,23 @@ export default class Start extends React.Component {
         '#8A95A5',
         '#B9C6AE'
       ],
-      assetsLoaded: false
+      assetsLoaded: false,
+      uid: ''
     }
   }
 
   async componentDidMount() {
+    this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        await firebase.auth().signInAnonymously();
+      }
+    
+      //update user state with currently active user data
+      this.setState({
+        uid: user.uid
+      });
+    });
+    
     await Font.loadAsync({
         'Poppins-Black': require('../assets/fonts/Poppins-Black.ttf'),
         'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
@@ -34,9 +51,13 @@ export default class Start extends React.Component {
     this.setState({ assetsLoaded: true })
   }
 
+  componentWillUnmount() {
+    this.authUnsubscribe();
+  }
+
   render() {
     const { navigation } = this.props;
-    const { name, colors, colorSelected, assetsLoaded } = this.state;
+    const { name, colors, colorSelected, assetsLoaded, uid } = this.state;
     if (assetsLoaded) {
       return (
         <ImageBackground source={require('../assets/BackgroundImage.png')} style={styles.backgroundImage}>
@@ -52,8 +73,9 @@ export default class Start extends React.Component {
                 onChangeText={(name) => this.setState({ name })}
                 value={this.state.name}
                 placeholder='Input handle...                                      '
-              />
+              />  
             </View>
+            {Platform.OS === 'android' ? <KeyboardSpacer /> : null } 
             <Text style={styles.chooseText}>
               Choose Background Color:
             </Text>
@@ -74,7 +96,7 @@ export default class Start extends React.Component {
                 </View>
               ))}
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('Chat', { name, color: colorSelected })}
+            <TouchableOpacity onPress={() => navigation.navigate('Chat', { name, color: colorSelected, uid})}
               style={[styles.chatButton]}
               accessible={true}
               accessibilityLabel='Start chatting'
@@ -84,7 +106,7 @@ export default class Start extends React.Component {
                 Start Chatting
               </Text>
             </TouchableOpacity>
-          </View>
+          </View> 
         </ImageBackground >
       )
     }
