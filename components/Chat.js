@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, KeyboardAvoidingView } from 'react-native';
+import { StyleSheet, Text, View, KeyboardAvoidingView, AsyncStorage } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
 import { Header } from 'react-navigation-stack';
 import KeyboardSpacer from 'react-native-keyboard-spacer';
+import NetInfo from '@react-native-community/netinfo';
 import * as Font from 'expo-font';
 const firebase = require('firebase');
 require('firebase/firestore');
@@ -24,12 +25,21 @@ export default class Chat extends React.Component {
     this.state = {
       assetsLoaded: false,
       messages: [],
-      color: this.props.navigation.getParam('color')
+      color: this.props.navigation.getParam('color'),
+      isConnected: false
     }
   }
 
   async componentDidMount() {
-    this.unsubscribe = this.referenceMessages.orderBy('createdAt','desc').onSnapshot(this.onCollectionUpdate);
+    NetInfo.isConnected.fetch().then(isConnected => {
+      this.setState({
+        isConnected
+      });
+      this.getMessages();
+      if (isConnected) {
+        this.unsubscribe = this.referenceMessages.orderBy('createdAt','desc').onSnapshot(this.onCollectionUpdate);
+      }
+    });
     await Font.loadAsync({
       'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
     });
@@ -37,6 +47,18 @@ export default class Chat extends React.Component {
       assetsLoaded: true,
     })
   }
+
+  async getMessages() {
+    let messages = '';
+    try {
+      messages = await AsyncStorage.getItem('messages') || [];
+      this.setState({
+        messages: JSON.parse(messages)
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
 
   onCollectionUpdate = querySnapshot => {
     const messages = [];
@@ -60,13 +82,30 @@ export default class Chat extends React.Component {
 
   onSend(messages = []) {
     this.setState(previousState => ({
-      messages: GiftedChat.append(previousState.messages, messages)
-    }));
+      messages: GiftedChat.append(previousState.messages, messages),
+    }), () => {
+      this.saveMessages();
+    });
     this.addMessage(messages)
   }
 
+  async saveMessages() {
+    try {
+      await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  async deleteMessages() {
+    try {
+      await AsyncStorage.removeItem('messages');
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
   addMessage(message) {
-    console.log(message);
     const {_id, createdAt, text, user} = message[0];
     this.referenceMessages.add({
       _id: _id,
@@ -94,6 +133,17 @@ export default class Chat extends React.Component {
     );
   }
 
+  renderInputToolbar(props) {
+    if (this.state.isConnected == false) {
+    } else {
+      return(
+        <InputToolbar
+        {...props}
+        />
+      );
+    }
+  }
+
   render() {
     const { navigation } = this.props;
     const { assetsLoaded } = this.state;
@@ -106,6 +156,7 @@ export default class Chat extends React.Component {
                 messages={this.state.messages}
                 placeholder='Type a message...'
                 renderBubble={this.renderBubble}
+                renderInputToolbar={this.renderInputToolbar}
                 onSend={messages => this.onSend(messages)}
                 user={{
                   _id: navigation.getParam('uid'),
@@ -121,6 +172,7 @@ export default class Chat extends React.Component {
                 messages={this.state.messages}
                 placeholder='Type a message...'
                 renderBubble={this.renderBubble}
+                renderInputToolbar={this.renderInputToolbar}
                 onSend={messages => this.onSend(messages)}
                 user={{
                   _id: navigation.getParam('uid'),
