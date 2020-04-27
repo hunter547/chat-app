@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, KeyboardAvoidingView, AsyncStorage } from 'react-native';
-import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import { Header } from 'react-navigation-stack';
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import NetInfo from '@react-native-community/netinfo';
@@ -31,7 +31,8 @@ export default class Chat extends React.Component {
   }
 
   async componentDidMount() {
-    NetInfo.isConnected.fetch().then(isConnected => {
+    NetInfo.fetch().then(state => {
+      var isConnected = state.isConnected;
       this.setState({
         isConnected
       });
@@ -133,7 +134,7 @@ export default class Chat extends React.Component {
     );
   }
 
-  renderInputToolbar(props) {
+  renderInputToolbar = props => {
     if (this.state.isConnected == false) {
     } else {
       return(
