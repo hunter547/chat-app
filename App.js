@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, Alert, ScrollView } from 'react-native';
 import { createAppContainer } from 'react-navigation';
 import { createStackNavigator } from 'react-navigation-stack';
 // Import the screens we want to navigate

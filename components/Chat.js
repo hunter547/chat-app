@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, KeyboardAvoidingView, AsyncStorage } from 'react-native';
+import { StyleSheet, Text, View, KeyboardAvoidingView, AsyncStorage, YellowBox } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import { Header } from 'react-navigation-stack';
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import NetInfo from '@react-native-community/netinfo';
 import * as Font from 'expo-font';
+import MapView from 'react-native-maps';
+import CustomActions from './CustomActions';
 const firebase = require('firebase');
 require('firebase/firestore');
+import PercentageSVG from '../assets/percentageWheel';
 
 export default class Chat extends React.Component {
   static navigationOptions = ({ navigation }) => {
@@ -26,7 +29,9 @@ export default class Chat extends React.Component {
       assetsLoaded: false,
       messages: [],
       color: this.props.navigation.getParam('color'),
-      isConnected: false
+      isConnected: false,
+      image: null,
+      location: null
     }
   }
 
@@ -38,7 +43,7 @@ export default class Chat extends React.Component {
       });
       this.getMessages();
       if (isConnected) {
-        this.unsubscribe = this.referenceMessages.orderBy('createdAt','desc').onSnapshot(this.onCollectionUpdate);
+        this.unsubscribe = this.referenceMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
       }
     });
     await Font.loadAsync({
@@ -46,16 +51,21 @@ export default class Chat extends React.Component {
     });
     this.setState({
       assetsLoaded: true,
-    })
+    });
+    
+    // The line below solves an issue with react-native timers in Android: https://stackoverflow.com/a/54798303
+    YellowBox.ignoreWarnings(['Setting a timer']);
   }
 
   async getMessages() {
     let messages = '';
     try {
       messages = await AsyncStorage.getItem('messages') || [];
-      this.setState({
-        messages: JSON.parse(messages)
-      });
+      if (messages.length > 0) {
+        this.setState({
+          messages: JSON.parse(messages)
+        });
+      }
     } catch (error) {
       console.log(error.message);
     }
@@ -69,7 +79,9 @@ export default class Chat extends React.Component {
         _id: doc.id,
         createdAt: data.createdAt.toDate(),
         text: data.text,
-        user: data.user
+        user: data.user,
+        image: data.image,
+        location: data.location
       });
     });
     this.setState({
@@ -82,12 +94,24 @@ export default class Chat extends React.Component {
   }
 
   onSend(messages = []) {
-    this.setState(previousState => ({
-      messages: GiftedChat.append(previousState.messages, messages),
-    }), () => {
-      this.saveMessages();
-    });
-    this.addMessage(messages)
+    if (!messages[0].upload) {
+      this.setState(previousState => ({
+        messages: GiftedChat.append(previousState.messages, messages),
+      }), () => {
+        this.saveMessages();
+      });
+      this.addMessage(messages)
+    }
+    else {
+      var newMessages = this.state.messages;
+      if (newMessages.length > 0 && newMessages[0].upload === true) {
+        messages[0].createdAt = newMessages[0].createdAt;
+        newMessages.shift();
+      }
+      this.setState({
+        messages: GiftedChat.append(newMessages, messages[0])
+      });
+    }
   }
 
   async saveMessages() {
@@ -107,17 +131,20 @@ export default class Chat extends React.Component {
   }
 
   addMessage(message) {
-    const {_id, createdAt, text, user} = message[0];
+    console.log(message[0]);
+    const { _id, createdAt, text, user, image, location } = message[0];
     this.referenceMessages.add({
       _id: _id,
       createdAt: createdAt,
-      text: text,
+      text: text || null,
       user: {
         _id: user._id,
         avatar: user.avatar,
         backgroundColor: user.backgroundColor,
         name: user.name
-      }
+      },
+      image: image || null,
+      location: location || null
     })
   }
 
@@ -137,13 +164,49 @@ export default class Chat extends React.Component {
   renderInputToolbar = props => {
     if (this.state.isConnected == false) {
     } else {
-      return(
+      return (
         <InputToolbar
-        {...props}
+          {...props}
         />
       );
     }
   }
+
+  renderCustomView(props) {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      const latitude = parseInt(currentMessage.location.latitude);
+      const longitude = parseInt(currentMessage.location.longitude);
+      return (
+        <MapView
+          style={{
+            width: 150,
+            height: 100,
+            borderRadius: 13,
+            margin: 3
+          }}
+          region={{
+            latitude,
+            longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        />
+      );
+    }
+    if (currentMessage.upload) {
+      return (
+        <View style={{margin: 3, paddingTop: 10}}>
+          <PercentageSVG percentage={currentMessage.progress} />
+        </View>  
+      )
+    }
+    return null;
+  }
+
+  renderActions = (props) => {
+    return <CustomActions {...props} />;
+  };
 
   render() {
     const { navigation } = this.props;
@@ -158,6 +221,8 @@ export default class Chat extends React.Component {
                 placeholder='Type a message...'
                 renderBubble={this.renderBubble}
                 renderInputToolbar={this.renderInputToolbar}
+                renderCustomView={this.renderCustomView}
+                renderActions={this.renderActions}
                 onSend={messages => this.onSend(messages)}
                 user={{
                   _id: navigation.getParam('uid'),
@@ -174,6 +239,8 @@ export default class Chat extends React.Component {
                 placeholder='Type a message...'
                 renderBubble={this.renderBubble}
                 renderInputToolbar={this.renderInputToolbar}
+                renderCustomView={this.renderCustomView}
+                renderActions={this.renderActions}
                 onSend={messages => this.onSend(messages)}
                 user={{
                   _id: navigation.getParam('uid'),
