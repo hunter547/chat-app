@@ -36,25 +36,30 @@ export default class Chat extends React.Component {
   }
 
   async componentDidMount() {
-    NetInfo.fetch().then(state => {
-      var isConnected = state.isConnected;
-      this.setState({
-        isConnected
+    try {
+      NetInfo.fetch().then(state => {
+        const isConnected = state.isConnected;
+        this.setState({
+          isConnected
+        });
+        this.getMessages();
+        if (isConnected) {
+          this.unsubscribe = this.referenceMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
+        }
       });
-      this.getMessages();
-      if (isConnected) {
-        this.unsubscribe = this.referenceMessages.orderBy('createdAt', 'desc').onSnapshot(this.onCollectionUpdate);
-      }
-    });
-    await Font.loadAsync({
-      'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
-    });
-    this.setState({
-      assetsLoaded: true,
-    });
-    
-    // The line below solves an issue with react-native timers in Android: https://stackoverflow.com/a/54798303
-    YellowBox.ignoreWarnings(['Setting a timer']);
+      await Font.loadAsync({
+        'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
+      });
+      this.setState({
+        assetsLoaded: true,
+      });
+      
+      // The line below solves an issue with react-native timers in Android: https://stackoverflow.com/a/54798303
+      YellowBox.ignoreWarnings(['Setting a timer']);
+    }
+    catch(error) {
+      console.log(error)
+    }
   }
 
   async getMessages() {
@@ -103,7 +108,7 @@ export default class Chat extends React.Component {
       this.addMessage(messages)
     }
     else {
-      var newMessages = this.state.messages;
+      let newMessages = this.state.messages;
       if (newMessages.length > 0 && newMessages[0].upload === true) {
         messages[0].createdAt = newMessages[0].createdAt;
         newMessages.shift();

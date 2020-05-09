@@ -8,8 +8,6 @@ import { Observable } from 'rxjs';
 import firebase from "firebase";
 import "firebase/firestore";
 
-var progress = 0;
-
 export default class CustomActions extends Component {
 
   onActionPress = () => {
@@ -45,7 +43,6 @@ export default class CustomActions extends Component {
 
         if (!result.cancelled) {
           this.storeImage(result.uri); 
-          
         }
       }
     }
@@ -97,17 +94,22 @@ export default class CustomActions extends Component {
       const promise = [];
       const ref = firebase.storage().ref();
       const uploadTask = ref.child(`${uriName}`).put(blob);
-      var progress = Observable.interval(700).subscribe( _ => this.props.onSend({
+      const progress = Observable.interval(700).subscribe( _ => this.props.onSend({
         progress: Math.round((uploadTask.snapshot.bytesTransferred / uploadTask.snapshot.totalBytes)* 100),
         upload: true
       }));
       promise.push(uploadTask);
 
       Promise.all(promise).then( async tasks => {
-        progress.unsubscribe();
-        blob.close();
-        const imageUrl = await uploadTask.snapshot.ref.getDownloadURL()
-        this.props.onSend({ image: imageUrl })
+        try {
+          progress.unsubscribe();
+          blob.close();
+          const imageUrl = await uploadTask.snapshot.ref.getDownloadURL();
+          this.props.onSend({ image: imageUrl });
+        }
+        catch (error) {
+          console.log(error)
+        }
       });
 
     }
@@ -116,51 +118,24 @@ export default class CustomActions extends Component {
     }
   }
 
-  intervalTest = () => {
-    progress += 20;
-    this.props.onSend({
-      progress,
-      upload: true
-    });
-    
-    if (progress < 100) {
-      setTimeout(this.intervalTest, 700)
-    }
-    else if (progress = 100) {
-      progress = 0;
-    }
-  }
-
-  monitorFileUpload = task => {
-    task.on('state_changed', function (snapshot) {
-      var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-      console.log('Upload is ' + Math.round(progress) + '% done.');
-      
-      switch (snapshot.state) {
-        case firebase.storage.TaskState.RUNNING:
-          break;
-      }
-    }, function (error) {
-      console.log(error);
-    }, async function () {
-      // Handle successful uploads on complete
-      // For instance, get the download URL: https://firebasestorage.googleapis.com/...
-    });
-  }
-
   getLocation = async () => {
-    const { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status === 'granted') {
-      let result = await Location.getCurrentPositionAsync({});
+    try {
+      const { status } = await Permissions.askAsync(Permissions.LOCATION);
+      if (status === 'granted') {
+        let result = await Location.getCurrentPositionAsync({});
 
-      if (result) {
-        this.props.onSend({
-          location: {
-            longitude: result.coords.longitude,
-            latitude: result.coords.latitude
-          }
-        })
+        if (result) {
+          this.props.onSend({
+            location: {
+              longitude: result.coords.longitude,
+              latitude: result.coords.latitude
+            }
+          })
+        }
       }
+    }
+    catch (error) {
+      console.log(error);
     }
   }
 
