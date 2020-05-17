@@ -1,4 +1,4 @@
-# Bobchat :tw-1f4f1:
+# Bobchat :iphone:
 A react native application utilitzing gifted-chat and Google Firebase to offer a real-time chat experience on iOS and Android.
 ## Getting started
 
@@ -44,24 +44,24 @@ Click the “Download” link next to whichever OS you want to install. Android 
 
 Now, head back to the Virtual Device Manager and click “Play” to start your newly created emulator. Finally, head to the "Browser" tab of the project you're currently running in Expo and click "Run on Android device/emulator." Expo will start installing the Expo client on your virtual device and start your project.
 
-##Setting up Firebase
+## Setting up Firebase
 To get started, head over to [Google Firebase](https://firebase.google.com/ "Google Firebase") and click on "Sign in" in the upper-right corner. Use your existing Google credentials to sign in and create a new Firebase account. If you don't have a Google account, create one now.
 
 Next, click on the "Go to console" link, which is also in the top-right corner of the window, and click on "Create Project" (or "Add project" if you've created Firebase projects before). A form will appear asking you to fill basic in information about your new project. The default account on the last step.
 
-####Setting up Firebase Database
+#### Setting up Firebase Database
 
 Once the dashboard appears after creating your project, click the "Database" item in the left navbar. Then click "Create database" and select the "Start in test mode" option. This will allow users to read from and write to your database. Select a database location central to you or your user base.
 
-####Setting up Firebase Storage
+#### Setting up Firebase Storage
 
 In order for images to be sent and stored, the Firebase Storage needs to be setup. Click the "Storage" item in the left navbar. Then click "Get started", then "Next", and, finally, "Done".
 
-####Setting up Firebase Authentication
+#### Setting up Firebase Authentication
 
 Users will need to be properly authenticated in order for them to send and store messages to other users. To set this up head back to the dashboard and click "Authentication" in the left navbar. Then click "Setup sign-in method" and enable the list item "Anonymous".
 
-####Generating an API Key
+#### Generating an API Key
 
 In order for this app to gain access to your newly created Firebase project, you need to generate an API key. To do this, head over to Project Settings from the top of the left navbar and in the General tab, click on the "Create web app" button, which may just look like this: </>. Once the modal appears, give your app a name and click "Register app" (Firebase hosting not necessary).
 
@@ -103,6 +103,7 @@ All the configuration is now complete and your able to run the chat app. Navigat
 Then chose either the iOS simulator by typing "i" into the terminal, or "a" in the terminal for the Android emulator (note: the Android emulator has to already be running by clicking play on the AVD manager).
 
 To run the application on your mobile device:
+
 **iPhone:**
 Open the camera app and focus it on the QR code in either the Metro Bundler or the one generated in the terminal.
 
